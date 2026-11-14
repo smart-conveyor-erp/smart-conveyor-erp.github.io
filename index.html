@@ -121,8 +121,8 @@ th{color:var(--sub);font-size:11.5px;text-transform:uppercase}
             <option value="Module cảm biến công nghiệp">Module cảm biến công nghiệp</option>
             <option value="Bộ nguồn công nghiệp 24V DC">Bộ nguồn công nghiệp 24V DC</option>
           </select>
-          <label>Số lượng cần sản xuất (1 – 20 SP)</label>
-          <input id="fQty" type="number" min="1" max="20" value="5" required>
+          <label>Số lượng cần sản xuất (1 – 65.535 SP)</label>
+          <input id="fQty" type="number" min="1" max="65535" step="1" value="5" required>
           <div style="margin-top:14px">
             <button class="btn pri" type="submit" style="width:100%">GỬI ĐƠN HÀNG LÊN ERP</button>
           </div>
@@ -170,9 +170,9 @@ th{color:var(--sub);font-size:11.5px;text-transform:uppercase}
         <div class="row" style="margin-bottom:10px">
           <button class="btn pri ctrl-btn" onclick="sendCmd({reset:true})" style="width:100%">RESET BỘ ĐẾM</button>
         </div>
-        <label>Đặt mục tiêu trực tiếp (1 – 20)</label>
+        <label>Đặt mục tiêu trực tiếp (1 – 65.535)</label>
         <div class="row">
-          <input id="setTarget" type="number" min="1" max="20" value="10" style="flex:1">
+          <input id="setTarget" type="number" min="1" max="65535" step="1" value="10" style="flex:1">
           <button class="btn ctrl-btn" onclick="sendCmd({target:Number(document.getElementById('setTarget').value)})">Áp dụng</button>
         </div>
         <p style="font-size:12px;color:var(--sub);margin-top:12px">
@@ -251,6 +251,9 @@ async function fbFetch(path, method = "GET", body = null) {
 }
 
 async function sendCmd(obj) {
+  if (Object.prototype.hasOwnProperty.call(obj, "target") &&
+      (!Number.isInteger(obj.target) || obj.target < 1 || obj.target > 65535))
+    return toast("Mục tiêu phải là số nguyên từ 1 đến 65.535!");
   if (!pcOnline) return toast("PC đang OFFLINE, hãy chạy code Python trên PC trước!");
   try {
     await fbFetch("commands", "PATCH", obj);
@@ -265,7 +268,9 @@ $("orderForm").onsubmit = async e => {
   if (!getFbUrl()) return toast("Chưa cấu hình URL Firebase!");
   const id = "ord_" + Date.now();
   const code = "DH-" + String(Date.now()).slice(-4);
-  const qty = Math.max(1, Math.min(20, Number($("fQty").value) || 1));
+  const qty = Number($("fQty").value);
+  if (!Number.isInteger(qty) || qty < 1 || qty > 65535)
+    return toast("Số lượng phải là số nguyên từ 1 đến 65.535!");
   const payload = {
     id, code,
     customer: $("fCus").value.trim(),
